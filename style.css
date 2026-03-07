@@ -128,8 +128,8 @@ body {
 /* ===== PRODUCT GRID ===== */
 #product-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 6px;
 }
 
 /* ===== MODEL CARD - compact ===== */
@@ -156,7 +156,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 10px;
+  padding: 4px 6px;
   background: #fafafa;
   border-bottom: 1px solid var(--border);
 }
@@ -168,7 +168,7 @@ body {
 }
 
 .model-name {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 700;
 }
 
@@ -176,20 +176,20 @@ body {
 
 .model-actions {
   display: flex;
-  gap: 3px;
+  gap: 2px;
 }
 
 .model-actions .btn {
-  padding: 2px 6px;
-  font-size: 0.7rem;
+  padding: 2px 4px;
+  font-size: 0.65rem;
 }
 
 /* ===== VARIANT ROW - tight ===== */
 .variant-row {
   display: flex;
   align-items: center;
-  padding: 4px 10px;
-  gap: 6px;
+  padding: 2px 6px;
+  gap: 4px;
   border-bottom: 1px solid #f0f0f0;
 }
 
@@ -202,9 +202,9 @@ body {
 }
 
 .variant-color {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 500;
-  min-width: 50px;
+  min-width: 40px;
   color: var(--text-sub);
 }
 
@@ -215,8 +215,8 @@ body {
 }
 
 .counter-btn {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -247,16 +247,16 @@ body {
 }
 
 .sold-count {
-  min-width: 30px;
+  min-width: 24px;
   text-align: center;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
 .variant-stock {
   margin-left: auto;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   color: var(--text-muted);
   white-space: nowrap;
 }
@@ -265,10 +265,10 @@ body {
 .model-footer {
   display: flex;
   justify-content: space-between;
-  padding: 4px 10px;
+  padding: 3px 6px;
   background: #fafafa;
   border-top: 1px solid var(--border);
-  font-size: 0.75rem;
+  font-size: 0.7rem;
 }
 
 .model-total {

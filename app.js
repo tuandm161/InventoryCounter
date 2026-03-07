@@ -88,16 +88,24 @@ function renderModelCard(model) {
   const modelVariants = variants.filter(v => v.modelId === model.id);
   const totalSold = modelVariants.reduce((sum, v) => sum + v.sold, 0);
 
+  const imgHtml = model.image
+    ? `<img src="${model.image}" onclick="document.getElementById('upload-img-${model.id}').click()" style="width: 150px; height: 150px; border-radius: 4px; object-fit: cover; border: 1px solid var(--border); cursor: pointer; background: #fff; flex-shrink: 0;" title="Bấm để đổi ảnh">`
+    : `<div onclick="document.getElementById('upload-img-${model.id}').click()" style="width: 150px; height: 150px; border-radius: 4px; border: 1px dashed var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: 0.9rem; color: var(--text-muted); background: #fff; flex-shrink: 0;" title="Thêm ảnh"><span style="font-size:2rem; font-weight: 300; line-height: 1; margin-bottom: 2px;">+</span>Ảnh</div>`;
+
   return `
     <div class="model-card" id="model-${model.id}" data-id="${model.id}" draggable="true">
-      <div class="model-header" style="cursor: grab;" title="Kéo thả để sắp xếp">
-        <div class="model-title">
-          <span class="model-name">${escHtml(model.name)}</span>
-        </div>
-        <div class="model-actions">
-          <button class="btn btn-ghost" onclick="openAddColorModal(${model.id})" title="Thêm màu">＋ Màu</button>
-          <button class="btn btn-danger" onclick="resetModel(${model.id})" title="Reset mẫu này">↺</button>
-          <button class="btn btn-danger" onclick="deleteModel(${model.id})" title="Xóa mẫu">✕</button>
+      <div class="model-header" style="cursor: grab; display: flex; align-items: stretch; gap: 8px; padding: 6px;" title="Kéo thả để sắp xếp">
+        ${imgHtml}
+        <input type="file" id="upload-img-${model.id}" accept="image/*" style="display:none;" onchange="updateModelImage(${model.id}, this)">
+        <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 2px 0;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 4px;">
+            <span class="model-name" style="font-size: 1rem; line-height: 1.2; word-break: break-word;">${escHtml(model.name)}</span>
+            <div class="model-actions">
+              <button class="btn btn-danger" onclick="resetModel(${model.id})" title="Reset mẫu này" style="padding: 2px 4px;">↺</button>
+              <button class="btn btn-danger" onclick="deleteModel(${model.id})" title="Xóa mẫu" style="padding: 2px 4px;">✕</button>
+            </div>
+          </div>
+          <button class="btn" onclick="openAddColorModal(${model.id})" style="align-self: flex-start; padding: 3px 8px; font-size: 0.7rem; margin-top: 4px; border-style: dashed;">＋ Thêm màu</button>
         </div>
       </div>
       <div class="model-body">
@@ -203,6 +211,7 @@ function changeSold(variantId, delta) {
 // ===== ADD MODEL =====
 function openAddModelModal() {
   document.getElementById('input-model-name').value = '';
+  document.getElementById('input-model-image').value = '';
   document.getElementById('input-model-color').value = '';
   document.getElementById('input-model-stock').value = '';
   openModal('modal-add-model');
@@ -213,6 +222,7 @@ function addModel() {
   const nameEl = document.getElementById('input-model-name');
   const colorEl = document.getElementById('input-model-color');
   const stockEl = document.getElementById('input-model-stock');
+  const imageEl = document.getElementById('input-model-image');
 
   const name = nameEl.value.trim();
   const color = colorEl.value.trim();
@@ -221,15 +231,21 @@ function addModel() {
   if (!name) { nameEl.focus(); return; }
   if (!color) { colorEl.focus(); return; }
 
-  const model = { id: nextModelId++, name, order: models.length };
-  models.push(model);
+  const btn = document.querySelector('#modal-add-model .btn-primary');
+  if (btn) btn.disabled = true;
 
-  const variant = { id: nextVariantId++, modelId: model.id, color, stock, sold: 0 };
-  variants.push(variant);
+  compressImage(imageEl.files[0], (base64Img) => {
+    if (btn) btn.disabled = false;
+    const model = { id: nextModelId++, name, order: models.length, image: base64Img };
+    models.push(model);
 
-  saveData();
-  renderAll();
-  closeModal('modal-add-model');
+    const variant = { id: nextVariantId++, modelId: model.id, color, stock, sold: 0 };
+    variants.push(variant);
+
+    saveData();
+    renderAll();
+    closeModal('modal-add-model');
+  });
 }
 
 // ===== ADD COLOR =====
@@ -328,6 +344,55 @@ document.getElementById('input-model-stock').addEventListener('keydown', (e) => 
 document.getElementById('input-color-stock').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') addColor();
 });
+
+// ===== IMAGE HELPERS =====
+function compressImage(file, callback) {
+  if (!file) {
+    return callback(null);
+  }
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const img = new Image();
+    img.onload = function () {
+      const canvas = document.createElement('canvas');
+      const MAX_SIZE = 300; // 300px max size for better picture quality
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > MAX_SIZE) {
+          height *= MAX_SIZE / width;
+          width = MAX_SIZE;
+        }
+      } else {
+        if (height > MAX_SIZE) {
+          width *= MAX_SIZE / height;
+          height = MAX_SIZE;
+        }
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      callback(canvas.toDataURL('image/jpeg', 0.8));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function updateModelImage(modelId, fileInput) {
+  const file = fileInput.files[0];
+  if (!file) return;
+  compressImage(file, (base64Img) => {
+    const model = models.find(m => m.id === modelId);
+    if (model) {
+      model.image = base64Img;
+      saveData();
+      renderProducts();
+    }
+  });
+}
 
 // ===== HELPERS =====
 function formatMoney(amount) {
