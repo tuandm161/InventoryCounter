@@ -94,26 +94,26 @@ function renderModelCard(model) {
 
   return `
     <div class="model-card" id="model-${model.id}" data-id="${model.id}" draggable="true">
-      <div class="model-header" style="cursor: grab; display: flex; align-items: stretch; gap: 8px; padding: 6px;" title="Kéo thả để sắp xếp">
-        ${imgHtml}
-        <input type="file" id="upload-img-${model.id}" accept="image/*" style="display:none;" onchange="updateModelImage(${model.id}, this)">
-        <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 2px 0;">
+      <div class="model-header" style="cursor: grab; display: flex; align-items: flex-start; gap: 8px; padding: 6px; background: #fff;" title="Kéo thả để sắp xếp">
+        <div style="display: flex; flex-direction: column; gap: 4px; align-items: center;">
+          ${imgHtml}
+          <input type="file" id="upload-img-${model.id}" accept="image/*" style="display:none;" onchange="updateModelImage(${model.id}, this)">
+          <span class="model-total" style="font-size: 0.85rem; color: var(--accent); background: #fafafa; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border); width: 100%; text-align: center;">Tổng: <strong>${totalSold}</strong></span>
+        </div>
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 0; min-width: 0;">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 4px;">
-            <span class="model-name" style="font-size: 1rem; line-height: 1.2; word-break: break-word;">${escHtml(model.name)}</span>
-            <div class="model-actions">
-              <button class="btn btn-danger" onclick="resetModel(${model.id})" title="Reset mẫu này" style="padding: 2px 4px;">↺</button>
-              <button class="btn btn-danger" onclick="deleteModel(${model.id})" title="Xóa mẫu" style="padding: 2px 4px;">✕</button>
+            <span class="model-name" onclick="editModelName(${model.id})" style="font-size: 1rem; line-height: 1.2; word-break: break-word; cursor: pointer; text-decoration: underline dashed #ccc;" title="Bấm để sửa tên mẫu">${escHtml(model.name)}</span>
+          </div>
+          
+          <div class="model-body" style="display: flex; flex-direction: column; gap: 4px; padding: 0;">
+            ${modelVariants.map(v => renderVariantRow(v)).join('')}
+            ${modelVariants.length === 0 ? '<p style="color:var(--text-muted);font-size:0.85rem; margin: 0;">Chưa có màu nào.</p>' : ''}
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
+              <button class="btn" onclick="openAddColorModal(${model.id})" style="padding: 2px 6px; font-size: 0.7rem; border-style: dashed;">＋ Thêm màu</button>
+              <button class="btn btn-danger" onclick="deleteModel(${model.id})" title="Xóa mẫu này" style="padding: 2px 6px; font-size: 0.7rem;">✕ Xóa mẫu</button>
             </div>
           </div>
-          <button class="btn" onclick="openAddColorModal(${model.id})" style="align-self: flex-start; padding: 3px 8px; font-size: 0.7rem; margin-top: 4px; border-style: dashed;">＋ Thêm màu</button>
         </div>
-      </div>
-      <div class="model-body">
-        ${modelVariants.map(v => renderVariantRow(v)).join('')}
-        ${modelVariants.length === 0 ? '<p style="padding:14px 18px;color:var(--text-muted);font-size:0.85rem;">Chưa có màu nào. Bấm "＋ Màu" để thêm.</p>' : ''}
-      </div>
-      <div class="model-footer">
-        <span class="model-total">Tổng ${escHtml(model.name)}: <strong>${totalSold}</strong></span>
       </div>
     </div>
   `;
@@ -121,32 +121,27 @@ function renderModelCard(model) {
 
 function renderVariantRow(v) {
   const model = models.find(m => m.id === v.modelId);
-  const remain = v.stock - v.sold;
 
   return `
-    <div class="variant-row" id="variant-${v.id}">
-      <span class="variant-color">${escHtml(v.color)}</span>
-      <div class="variant-controls">
-        <button class="counter-btn minus" onclick="changeSold(${v.id}, -1)" ${v.sold <= 0 ? 'disabled' : ''}>−</button>
-        <span class="sold-count" id="sold-${v.id}">${v.sold}</span>
-        <button class="counter-btn plus" onclick="changeSold(${v.id}, 1)">＋</button>
+    <div class="variant-row" id="variant-${v.id}" style="justify-content: space-between; background: #fafafa; border: 1px solid var(--border); border-radius: 4px; padding: 2px 4px; font-size: 0.75rem;">
+      <span class="variant-color" onclick="editColorName(${v.id})" style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; cursor: pointer; text-decoration: underline dashed #ccc;" title="Bấm để sửa màu">${escHtml(v.color)}</span>
+      <div class="variant-controls" style="gap: 1px;">
+        <button class="counter-btn minus" onclick="changeSold(${v.id}, -1)" ${v.sold <= 0 ? 'disabled' : ''} style="width: 20px; height: 20px;">−</button>
+        <span class="sold-count" id="sold-${v.id}" style="min-width: 20px; font-size: 0.8rem;">${v.sold}</span>
+        <button class="counter-btn plus" onclick="changeSold(${v.id}, 1)" style="width: 20px; height: 20px;">＋</button>
       </div>
-      <span class="variant-stock" title="Bấm để sửa tồn kho" style="cursor: pointer; text-decoration: underline dashed #ccc;" onclick="editStock(${v.id})">tồn: <strong id="remain-${v.id}">${remain}</strong> / ${v.stock}</span>
     </div>
   `;
 }
 
-function editStock(variantId) {
-  const v = variants.find(x => x.id === variantId);
-  if (!v) return;
-  const newValue = prompt(`Sửa số lượng tồn kho của màu '${v.color}':`, v.stock);
-  if (newValue !== null && newValue.trim() !== '') {
-    const stockInt = parseInt(newValue);
-    if (!isNaN(stockInt) && stockInt >= 0) {
-      v.stock = stockInt;
-      saveData();
-      renderAll();
-    }
+function editModelName(modelId) {
+  const model = models.find(m => m.id === modelId);
+  if (!model) return;
+  const newName = prompt(`Nhập tên mới cho mẫu này:`, model.name);
+  if (newName !== null && newName.trim() !== '') {
+    model.name = newName.trim();
+    saveData();
+    renderAll();
   }
 }
 
@@ -168,14 +163,8 @@ function updateVariantUI(variantId) {
     soldEl.classList.add('pulse');
   }
 
-  // Update stock display
   const row = document.getElementById(`variant-${v.id}`);
   if (row) {
-    const stockEl = row.querySelector('.variant-stock');
-    if (stockEl) {
-      const remain = v.stock - v.sold;
-      stockEl.innerHTML = `tồn: <strong>${remain}</strong> / ${v.stock}`;
-    }
     // Update minus button disabled state
     const minusBtn = row.querySelector('.counter-btn.minus');
     if (minusBtn) minusBtn.disabled = v.sold <= 0;
@@ -188,7 +177,7 @@ function updateVariantUI(variantId) {
     const totalSold = modelVariants.reduce((sum, x) => sum + x.sold, 0);
 
     const totalEl = modelCard.querySelector('.model-total');
-    if (totalEl) totalEl.innerHTML = `Tổng ${escHtml(model.name)}: <strong>${totalSold}</strong>`;
+    if (totalEl) totalEl.innerHTML = `Tổng: <strong>${totalSold}</strong>`;
   }
 
   // Update global stats
@@ -213,7 +202,6 @@ function openAddModelModal() {
   document.getElementById('input-model-name').value = '';
   document.getElementById('input-model-image').value = '';
   document.getElementById('input-model-color').value = '';
-  document.getElementById('input-model-stock').value = '';
   openModal('modal-add-model');
   setTimeout(() => document.getElementById('input-model-name').focus(), 300);
 }
@@ -221,12 +209,10 @@ function openAddModelModal() {
 function addModel() {
   const nameEl = document.getElementById('input-model-name');
   const colorEl = document.getElementById('input-model-color');
-  const stockEl = document.getElementById('input-model-stock');
   const imageEl = document.getElementById('input-model-image');
 
   const name = nameEl.value.trim();
   const color = colorEl.value.trim();
-  const stock = parseInt(stockEl.value) || 0;
 
   if (!name) { nameEl.focus(); return; }
   if (!color) { colorEl.focus(); return; }
@@ -239,7 +225,7 @@ function addModel() {
     const model = { id: nextModelId++, name, order: models.length, image: base64Img };
     models.push(model);
 
-    const variant = { id: nextVariantId++, modelId: model.id, color, stock, sold: 0 };
+    const variant = { id: nextVariantId++, modelId: model.id, color, stock: 0, sold: 0 };
     variants.push(variant);
 
     saveData();
@@ -254,7 +240,6 @@ function openAddColorModal(modelId) {
   const model = models.find(m => m.id === modelId);
   document.getElementById('add-color-model-name').textContent = model ? model.name : '';
   document.getElementById('input-color-name').value = '';
-  document.getElementById('input-color-stock').value = '';
   openModal('modal-add-color');
   setTimeout(() => document.getElementById('input-color-name').focus(), 300);
 }
@@ -263,14 +248,12 @@ function addColor() {
   if (!addColorTargetModelId) return;
 
   const colorEl = document.getElementById('input-color-name');
-  const stockEl = document.getElementById('input-color-stock');
 
   const color = colorEl.value.trim();
-  const stock = parseInt(stockEl.value) || 0;
 
   if (!color) { colorEl.focus(); return; }
 
-  const variant = { id: nextVariantId++, modelId: addColorTargetModelId, color, stock, sold: 0 };
+  const variant = { id: nextVariantId++, modelId: addColorTargetModelId, color, stock: 0, sold: 0 };
   variants.push(variant);
 
   saveData();
@@ -280,19 +263,12 @@ function addColor() {
 }
 
 // ===== RESET =====
-function resetModel(modelId) {
-  const model = models.find(m => m.id === modelId);
-  if (!model) return;
-  if (!confirm(`Reset toàn bộ đơn của mẫu "${model.name}"?`)) return;
-
-  variants.filter(v => v.modelId === modelId).forEach(v => v.sold = 0);
-  saveData();
-  renderAll();
-}
-
 function resetAll() {
-  if (variants.length === 0) return;
-  if (!confirm('Reset toàn bộ đơn?')) return;
+  if (models.length === 0 && variants.length === 0) {
+    alert('Chưa có dữ liệu nào để reset!');
+    return;
+  }
+  if (!confirm('Xác nhận reset toàn bộ số CHỐT ĐƠN (Đã bán) của TẤT CẢ CÁC MẪU về 0?')) return;
 
   variants.forEach(v => v.sold = 0);
   saveData();
@@ -309,6 +285,17 @@ function deleteModel(modelId) {
   variants = variants.filter(v => v.modelId !== modelId);
   saveData();
   renderAll();
+}
+
+function editColorName(variantId) {
+  const v = variants.find(x => x.id === variantId);
+  if (!v) return;
+  const newName = prompt(`Nhập màu mới:`, v.color);
+  if (newName !== null && newName.trim() !== '') {
+    v.color = newName.trim();
+    saveData();
+    renderAll();
+  }
 }
 
 // ===== MODAL =====
@@ -337,11 +324,11 @@ document.addEventListener('keydown', (e) => {
 });
 
 // Submit on Enter in modals
-document.getElementById('input-model-stock').addEventListener('keydown', (e) => {
+document.getElementById('input-model-color').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') addModel();
 });
 
-document.getElementById('input-color-stock').addEventListener('keydown', (e) => {
+document.getElementById('input-color-name').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') addColor();
 });
 

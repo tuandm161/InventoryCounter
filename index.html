@@ -20,22 +20,23 @@
       <span class="stat-item">Mẫu: <strong id="total-models">0</strong></span>
     </div>
     <div class="header-actions">
+      <div style="display: flex; align-items: center; gap: 4px; margin-right: 8px;">
+        <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub);">Sắp xếp:</span>
+        <select id="sort-select" onchange="renderAll()"
+          style="padding: 2px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.75rem; outline: none; background: #fff; cursor: pointer;">
+          <option value="manual">Tự do</option>
+          <option value="sold_desc">Nhiều nhất</option>
+          <option value="name_asc">A-Z</option>
+          <option value="name_desc">Z-A</option>
+        </select>
+      </div>
       <button class="btn btn-primary" id="btn-add-model" onclick="openAddModelModal()">+ Mẫu</button>
       <button class="btn btn-red" id="btn-reset-all" onclick="resetAll()">Reset</button>
     </div>
   </header>
 
   <main id="app-main">
-    <div style="margin-bottom: 10px; display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
-      <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-sub);">Sắp xếp:</span>
-      <select id="sort-select" onchange="renderAll()"
-        style="padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.8rem; outline: none; background: #fff; cursor: pointer;">
-        <option value="manual">Tùy chỉnh (Kéo thả)</option>
-        <option value="sold_desc">Số lượng (Nhiều nhất)</option>
-        <option value="name_asc">Tên (A-Z)</option>
-        <option value="name_desc">Tên (Z-A)</option>
-      </select>
-    </div>
+
     <div id="product-list"></div>
 
     <div id="empty-state" class="empty-state">
@@ -65,10 +66,6 @@
           <label>Màu đầu tiên</label>
           <input type="text" id="input-model-color" placeholder="Đen, Trắng...">
         </div>
-        <div class="form-group">
-          <label>Số lượng tồn</label>
-          <input type="number" id="input-model-stock" placeholder="200" min="0">
-        </div>
       </div>
       <div class="modal-footer">
         <button class="btn" onclick="closeModal('modal-add-model')">Hủy</button>
@@ -89,10 +86,6 @@
         <div class="form-group">
           <label>Tên màu</label>
           <input type="text" id="input-color-name" placeholder="Xanh, Đỏ...">
-        </div>
-        <div class="form-group">
-          <label>Số lượng tồn</label>
-          <input type="number" id="input-color-stock" placeholder="200" min="0">
         </div>
       </div>
       <div class="modal-footer">
