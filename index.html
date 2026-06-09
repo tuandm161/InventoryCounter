@@ -30,8 +30,9 @@
           <option value="name_desc">Z-A</option>
         </select>
       </div>
+      <button class="btn btn-primary" id="btn-add-bulk" onclick="openAddBulkModal()">+ Nhiều Mẫu</button>
       <button class="btn btn-primary" id="btn-add-model" onclick="openAddModelModal()">+ Mẫu</button>
-      <button class="btn btn-red" id="btn-reset-all" onclick="resetAll()">Reset</button>
+      <button class="btn btn-red" id="btn-reset-all" onclick="openResetModal()">Reset</button>
     </div>
   </header>
 
@@ -63,7 +64,7 @@
           <input type="file" id="input-model-image" accept="image/*" style="padding: 4px; font-size: 0.75rem;">
         </div>
         <div class="form-group">
-          <label>Màu đầu tiên</label>
+          <label>Màu đầu tiên (Tùy chọn)</label>
           <input type="text" id="input-model-color" placeholder="Đen, Trắng...">
         </div>
       </div>
@@ -91,6 +92,57 @@
       <div class="modal-footer">
         <button class="btn" onclick="closeModal('modal-add-color')">Hủy</button>
         <button class="btn btn-primary" onclick="addColor()">Thêm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Reset -->
+  <div class="modal-overlay" id="modal-reset">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Tùy chọn Reset</h2>
+        <button class="modal-close" onclick="closeModal('modal-reset')">&times;</button>
+      </div>
+      <div class="modal-body" style="text-align: center; padding: 20px 14px;">
+        <p style="margin-bottom: 20px; color: var(--text-sub); font-size: 0.9rem;">Bạn muốn thực hiện thao tác nào?</p>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <button class="btn btn-primary" style="justify-content: center; padding: 10px;" onclick="resetQuantities()">Chỉ reset số lượng đã bán về 0</button>
+          <button class="btn btn-red" style="justify-content: center; padding: 10px;" onclick="deleteAllData()">Xóa toàn bộ mẫu & dữ liệu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Thêm Nhiều Mẫu -->
+  <div class="modal-overlay" id="modal-add-bulk">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Thêm Nhiều Mẫu Cùng Lúc</h2>
+        <button class="modal-close" onclick="closeModal('modal-add-bulk')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Chữ cái (Ví dụ: A, B, C...)</label>
+          <input type="text" id="input-bulk-prefix" placeholder="A">
+        </div>
+        <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+          <div class="form-group" style="flex: 1; margin-bottom: 0;">
+            <label>Từ số</label>
+            <input type="number" id="input-bulk-start" placeholder="1" value="1" min="1">
+          </div>
+          <div class="form-group" style="flex: 1; margin-bottom: 0;">
+            <label>Đến số</label>
+            <input type="number" id="input-bulk-end" placeholder="10" value="10" min="1">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Màu mặc định (Tùy chọn)</label>
+          <input type="text" id="input-bulk-color" placeholder="Đen">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('modal-add-bulk')">Hủy</button>
+        <button class="btn btn-primary" onclick="addBulkModels()">Thêm</button>
       </div>
     </div>
   </div>

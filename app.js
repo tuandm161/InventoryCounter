@@ -129,6 +129,7 @@ function renderVariantRow(v) {
         <button class="counter-btn minus" onclick="changeSold(${v.id}, -1)" ${v.sold <= 0 ? 'disabled' : ''} style="width: 20px; height: 20px;">−</button>
         <span class="sold-count" id="sold-${v.id}" style="min-width: 20px; font-size: 0.8rem;">${v.sold}</span>
         <button class="counter-btn plus" onclick="changeSold(${v.id}, 1)" style="width: 20px; height: 20px;">＋</button>
+        <button class="counter-btn delete-color" onclick="deleteColor(${v.id})" style="width: 20px; height: 20px; margin-left: 4px; color: var(--red); border-color: #fce8e6; background: #fce8e6;" title="Xóa màu này">✕</button>
       </div>
     </div>
   `;
@@ -215,7 +216,6 @@ function addModel() {
   const color = colorEl.value.trim();
 
   if (!name) { nameEl.focus(); return; }
-  if (!color) { colorEl.focus(); return; }
 
   const btn = document.querySelector('#modal-add-model .btn-primary');
   if (btn) btn.disabled = true;
@@ -225,13 +225,60 @@ function addModel() {
     const model = { id: nextModelId++, name, order: models.length, image: base64Img };
     models.push(model);
 
-    const variant = { id: nextVariantId++, modelId: model.id, color, stock: 0, sold: 0 };
-    variants.push(variant);
+    if (color) {
+      const variant = { id: nextVariantId++, modelId: model.id, color, stock: 0, sold: 0 };
+      variants.push(variant);
+    }
 
     saveData();
     renderAll();
     closeModal('modal-add-model');
   });
+}
+
+// ===== ADD BULK MODELS =====
+function openAddBulkModal() {
+  document.getElementById('input-bulk-prefix').value = '';
+  document.getElementById('input-bulk-start').value = '1';
+  document.getElementById('input-bulk-end').value = '10';
+  document.getElementById('input-bulk-color').value = '';
+  openModal('modal-add-bulk');
+  setTimeout(() => document.getElementById('input-bulk-prefix').focus(), 300);
+}
+
+function addBulkModels() {
+  const prefixEl = document.getElementById('input-bulk-prefix');
+  const startEl = document.getElementById('input-bulk-start');
+  const endEl = document.getElementById('input-bulk-end');
+  const colorEl = document.getElementById('input-bulk-color');
+
+  const prefix = prefixEl.value.trim().toUpperCase();
+  const start = parseInt(startEl.value);
+  const end = parseInt(endEl.value);
+  const color = colorEl.value.trim();
+
+  if (!prefix) { prefixEl.focus(); return; }
+  if (isNaN(start) || start < 1) { startEl.focus(); return; }
+  if (isNaN(end) || end < start) { endEl.focus(); return; }
+
+  const btn = document.querySelector('#modal-add-bulk .btn-primary');
+  if (btn) btn.disabled = true;
+
+  for (let i = start; i <= end; i++) {
+    const name = `${prefix}${i}`;
+    const model = { id: nextModelId++, name, order: models.length, image: null };
+    models.push(model);
+
+    if (color) {
+      const variant = { id: nextVariantId++, modelId: model.id, color, stock: 0, sold: 0 };
+      variants.push(variant);
+    }
+  }
+
+  if (btn) btn.disabled = false;
+  saveData();
+  renderAll();
+  closeModal('modal-add-bulk');
 }
 
 // ===== ADD COLOR =====
@@ -263,16 +310,31 @@ function addColor() {
 }
 
 // ===== RESET =====
-function resetAll() {
+function openResetModal() {
   if (models.length === 0 && variants.length === 0) {
     alert('Chưa có dữ liệu nào để reset!');
     return;
   }
-  if (!confirm('Xác nhận reset toàn bộ số CHỐT ĐƠN (Đã bán) của TẤT CẢ CÁC MẪU về 0?')) return;
+  openModal('modal-reset');
+}
 
+function resetQuantities() {
+  if (!confirm('Xác nhận reset toàn bộ số CHỐT ĐƠN (Đã bán) của TẤT CẢ CÁC MẪU về 0?')) return;
   variants.forEach(v => v.sold = 0);
   saveData();
   renderAll();
+  closeModal('modal-reset');
+}
+
+function deleteAllData() {
+  if (!confirm('Xác nhận XÓA TOÀN BỘ danh sách mẫu và dữ liệu đã bán? Hành động này không thể hoàn tác!')) return;
+  models = [];
+  variants = [];
+  nextModelId = 1;
+  nextVariantId = 1;
+  saveData();
+  renderAll();
+  closeModal('modal-reset');
 }
 
 // ===== DELETE =====
@@ -283,6 +345,16 @@ function deleteModel(modelId) {
 
   models = models.filter(m => m.id !== modelId);
   variants = variants.filter(v => v.modelId !== modelId);
+  saveData();
+  renderAll();
+}
+
+function deleteColor(variantId) {
+  const v = variants.find(x => x.id === variantId);
+  if (!v) return;
+  if (!confirm(`Xác nhận xóa màu "${v.color}"?`)) return;
+
+  variants = variants.filter(x => x.id !== variantId);
   saveData();
   renderAll();
 }
@@ -330,6 +402,10 @@ document.getElementById('input-model-color').addEventListener('keydown', (e) => 
 
 document.getElementById('input-color-name').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') addColor();
+});
+
+document.getElementById('input-bulk-color').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') addBulkModels();
 });
 
 // ===== IMAGE HELPERS =====

@@ -118,6 +118,27 @@ body {
   background: #f8d7da;
 }
 
+.btn-danger {
+  color: var(--red);
+  border-color: #fce8e6;
+  background: #fff;
+}
+
+.btn-danger:hover {
+  background: #fce8e6;
+}
+
+.btn-danger-filled {
+  color: #fff;
+  background: var(--red);
+  border-color: var(--red);
+}
+
+.btn-danger-filled:hover {
+  background: #b71c1c;
+  border-color: #b71c1c;
+}
+
 /* ===== MAIN ===== */
 #app-main {
   max-width: 1200px;
