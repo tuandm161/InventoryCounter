@@ -15,12 +15,17 @@
 
   <header id="app-header">
     <span class="logo">⚡ Chốt Đơn</span>
+    <div class="page-switcher" role="tablist" aria-label="Chọn trang">
+      <button class="page-tab active" id="page-tab-inventory" onclick="switchPage('inventory')" role="tab" aria-selected="true">Đếm đơn</button>
+      <button class="page-tab" id="page-tab-clearance" onclick="switchPage('clearance')" role="tab" aria-selected="false">Xả hàng</button>
+    </div>
     <div class="stats-row">
-      <span class="stat-item">Đơn: <strong id="total-orders">0</strong></span>
-      <span class="stat-item">Mẫu: <strong id="total-models">0</strong></span>
+      <span class="stat-item"><span id="stat-orders-label">Đơn</span>: <strong id="total-orders">0</strong></span>
+      <span class="stat-item"><span id="stat-models-label">Mẫu</span>: <strong id="total-models">0</strong></span>
     </div>
     <div class="header-actions">
-      <div style="display: flex; align-items: center; gap: 4px; margin-right: 8px;">
+      <div id="inventory-actions" class="page-actions">
+        <div style="display: flex; align-items: center; gap: 4px; margin-right: 8px;">
         <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub);">Sắp xếp:</span>
         <select id="sort-select" onchange="renderAll()"
           style="padding: 2px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.75rem; outline: none; background: #fff; cursor: pointer;">
@@ -30,21 +35,41 @@
           <option value="name_desc">Z-A</option>
         </select>
       </div>
-      <button class="btn btn-primary" id="btn-add-bulk" onclick="openAddBulkModal()">+ Nhiều Mẫu</button>
-      <button class="btn btn-primary" id="btn-add-model" onclick="openAddModelModal()">+ Mẫu</button>
-      <button class="btn btn-red" id="btn-reset-all" onclick="openResetModal()">Reset</button>
+        <button class="btn btn-primary" id="btn-add-bulk" onclick="openAddBulkModal()">+ Nhiều Mẫu</button>
+        <button class="btn btn-primary" id="btn-add-model" onclick="openAddModelModal()">+ Mẫu</button>
+        <button class="btn btn-red" id="btn-reset-all" onclick="openResetModal()">Reset</button>
+      </div>
+      <div id="clearance-actions" class="page-actions hidden">
+        <button class="btn btn-primary" onclick="openAddClearanceModal()">+ Thêm hàng xả</button>
+      </div>
     </div>
   </header>
 
   <main id="app-main">
+    <section id="inventory-page" class="page-view">
+      <div id="product-list"></div>
 
-    <div id="product-list"></div>
+      <div id="empty-state" class="empty-state">
+        <div class="empty-icon">📦</div>
+        <h2>Chưa có mẫu nào</h2>
+        <p>Bấm <strong>"+ Mẫu"</strong> để bắt đầu</p>
+      </div>
+    </section>
 
-    <div id="empty-state" class="empty-state">
-      <div class="empty-icon">📦</div>
-      <h2>Chưa có mẫu nào</h2>
-      <p>Bấm <strong>"+ Mẫu"</strong> để bắt đầu</p>
-    </div>
+    <section id="clearance-page" class="page-view hidden">
+      <div class="page-heading">
+        <div>
+          <h1>Xả hàng</h1>
+          <p>Hàng xả không cần phân loại màu; bấm nút để đếm số đã bán và theo dõi số còn lại.</p>
+        </div>
+      </div>
+      <div id="clearance-list"></div>
+      <div id="clearance-empty-state" class="empty-state">
+        <div class="empty-icon">🏷️</div>
+        <h2>Chưa có hàng xả</h2>
+        <p>Bấm <strong>"+ Thêm hàng xả"</strong> để bắt đầu</p>
+      </div>
+    </section>
   </main>
 
   <!-- Modal: Thêm Mẫu -->
@@ -143,6 +168,31 @@
       <div class="modal-footer">
         <button class="btn" onclick="closeModal('modal-add-bulk')">Hủy</button>
         <button class="btn btn-primary" onclick="addBulkModels()">Thêm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Thêm hàng xả -->
+  <div class="modal-overlay" id="modal-add-clearance">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Thêm hàng xả</h2>
+        <button class="modal-close" onclick="closeModal('modal-add-clearance')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Ảnh sản phẩm</label>
+          <input type="file" id="input-clearance-image" accept="image/*" style="padding: 4px; font-size: 0.75rem;">
+          <small id="clearance-image-name" class="input-hint">Tên sản phẩm sẽ tự lấy theo tên file ảnh.</small>
+        </div>
+        <div class="form-group">
+          <label>Số lượng tồn ban đầu</label>
+          <input type="number" id="input-clearance-quantity" min="0" step="1" placeholder="Ví dụ: 20">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('modal-add-clearance')">Hủy</button>
+        <button class="btn btn-primary" onclick="addClearanceProduct()">Thêm</button>
       </div>
     </div>
   </div>

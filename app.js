@@ -4,6 +4,9 @@ let variants = [];  // { id, modelId, color, stock, sold }
 let nextModelId = 1;
 let nextVariantId = 1;
 let addColorTargetModelId = null;
+let clearanceProducts = []; // { id, name, image, stock, sold }
+let nextClearanceId = 1;
+let currentPage = 'inventory';
 
 // ===== INIT =====
 (function init() {
@@ -13,7 +16,7 @@ let addColorTargetModelId = null;
 
 // ===== LOCAL STORAGE =====
 function saveData() {
-  const data = { models, variants, nextModelId, nextVariantId };
+  const data = { models, variants, nextModelId, nextVariantId, clearanceProducts, nextClearanceId };
   localStorage.setItem('live_counter_data', JSON.stringify(data));
 }
 
@@ -26,6 +29,12 @@ function loadData() {
       variants = data.variants || [];
       nextModelId = data.nextModelId || 1;
       nextVariantId = data.nextVariantId || 1;
+      clearanceProducts = (data.clearanceProducts || []).map(item => ({
+        ...item,
+        stock: Number.isInteger(item.stock) ? item.stock : (Number(item.quantity) || 0),
+        sold: Number.isInteger(item.sold) ? Math.max(0, item.sold) : 0
+      }));
+      nextClearanceId = data.nextClearanceId || 1;
     }
   } catch (e) {
     console.warn('Load data error:', e);
@@ -34,16 +43,52 @@ function loadData() {
 
 // ===== RENDER =====
 function renderAll() {
+  renderPageVisibility();
   renderProducts();
+  renderClearanceProducts();
   renderStats();
 }
 
-function renderStats() {
-  const totalSold = variants.reduce((sum, v) => sum + v.sold, 0);
-  document.getElementById('total-orders').textContent = totalSold.toLocaleString('vi-VN');
-  document.getElementById('total-models').textContent = models.length;
+function switchPage(page) {
+  currentPage = page === 'clearance' ? 'clearance' : 'inventory';
+  renderAll();
 }
 
+function renderPageVisibility() {
+  const isClearance = currentPage === 'clearance';
+  document.getElementById('inventory-page').classList.toggle('hidden', isClearance);
+  document.getElementById('clearance-page').classList.toggle('hidden', !isClearance);
+  document.getElementById('inventory-actions').classList.toggle('hidden', isClearance);
+  document.getElementById('clearance-actions').classList.toggle('hidden', !isClearance);
+
+  const inventoryTab = document.getElementById('page-tab-inventory');
+  const clearanceTab = document.getElementById('page-tab-clearance');
+  inventoryTab.classList.toggle('active', !isClearance);
+  clearanceTab.classList.toggle('active', isClearance);
+  inventoryTab.setAttribute('aria-selected', String(!isClearance));
+  clearanceTab.setAttribute('aria-selected', String(isClearance));
+}
+
+function renderStats() {
+  const ordersLabel = document.getElementById('stat-orders-label');
+  const modelsLabel = document.getElementById('stat-models-label');
+  const firstStat = document.getElementById('total-orders');
+  const secondStat = document.getElementById('total-models');
+
+  if (currentPage === 'clearance') {
+    ordersLabel.textContent = 'Mặt hàng';
+    modelsLabel.textContent = 'Đã bán';
+    firstStat.textContent = clearanceProducts.length.toLocaleString('vi-VN');
+    secondStat.textContent = clearanceProducts.reduce((sum, item) => sum + item.sold, 0).toLocaleString('vi-VN');
+    return;
+  }
+
+  const totalSold = variants.reduce((sum, v) => sum + v.sold, 0);
+  ordersLabel.textContent = 'Đơn';
+  modelsLabel.textContent = 'Mẫu';
+  firstStat.textContent = totalSold.toLocaleString('vi-VN');
+  secondStat.textContent = models.length;
+}
 function renderProducts() {
   const container = document.getElementById('product-list');
   const emptyState = document.getElementById('empty-state');
@@ -82,6 +127,44 @@ function renderProducts() {
   if (sortValue === 'manual') {
     initDragAndDrop();
   }
+}
+
+function renderClearanceProducts() {
+  const container = document.getElementById('clearance-list');
+  const emptyState = document.getElementById('clearance-empty-state');
+
+  if (clearanceProducts.length === 0) {
+    container.innerHTML = '';
+    emptyState.classList.remove('hidden');
+    return;
+  }
+
+  emptyState.classList.add('hidden');
+  container.innerHTML = clearanceProducts.map(renderClearanceCard).join('');
+}
+
+function renderClearanceCard(item) {
+  const remain = item.stock - item.sold;
+  const isEmpty = remain <= 0;
+  const imageHtml = item.image
+    ? `<img class="clearance-image" src="${item.image}" alt="${escHtml(item.name)}">`
+    : '<div class="clearance-image-placeholder" aria-label="Chưa có ảnh">＋</div>';
+
+  return `
+    <article class="clearance-card${isEmpty ? ' is-empty' : ''}" id="clearance-${item.id}">
+      ${imageHtml}
+      <div class="clearance-content">
+        <div class="clearance-name" title="${escHtml(item.name)}">${escHtml(item.name)}</div>
+        <div class="clearance-quantity" aria-label="Số lượng đã bán">
+          <button class="counter-btn minus" onclick="changeClearanceSold(${item.id}, -1)" ${item.sold <= 0 ? 'disabled' : ''} aria-label="Giảm số đã bán">−</button>
+          <span class="quantity-value">${item.sold}</span>
+          <button class="counter-btn plus" onclick="changeClearanceSold(${item.id}, 1)" aria-label="Tăng số đã bán">＋</button>
+        </div>
+        <span class="clearance-status">${isEmpty ? `HẾT HÀNG · Còn ${remain}` : `Đã bán ${item.sold} · Còn ${remain}`}</span>
+      </div>
+      <button class="clearance-delete" onclick="deleteClearanceProduct(${item.id})" title="Xóa sản phẩm" aria-label="Xóa sản phẩm">✕</button>
+    </article>
+  `;
 }
 
 function renderModelCard(model) {
@@ -309,6 +392,68 @@ function addColor() {
   addColorTargetModelId = null;
 }
 
+// ===== CLEARANCE PAGE =====
+function openAddClearanceModal() {
+  document.getElementById('input-clearance-image').value = '';
+  document.getElementById('input-clearance-quantity').value = '';
+  document.getElementById('clearance-image-name').textContent = 'Tên sản phẩm sẽ tự lấy theo tên file ảnh.';
+  openModal('modal-add-clearance');
+  setTimeout(() => document.getElementById('input-clearance-image').focus(), 300);
+}
+
+function addClearanceProduct() {
+  const imageEl = document.getElementById('input-clearance-image');
+  const quantityEl = document.getElementById('input-clearance-quantity');
+  const file = imageEl.files[0];
+  const quantity = Number(quantityEl.value);
+
+  if (!file) {
+    imageEl.focus();
+    return;
+  }
+  if (!Number.isInteger(quantity) || quantity < 0) {
+    quantityEl.focus();
+    return;
+  }
+
+  const btn = document.querySelector('#modal-add-clearance .btn-primary');
+  if (btn) btn.disabled = true;
+
+  compressImage(file, (base64Img) => {
+    if (btn) btn.disabled = false;
+    const name = file.name.replace(/\.[^/.]+$/, '').trim() || 'Sản phẩm xả';
+    clearanceProducts.push({ id: nextClearanceId++, name, image: base64Img, stock: quantity, sold: 0 });
+    saveData();
+    renderClearanceProducts();
+    renderStats();
+    closeModal('modal-add-clearance');
+  });
+}
+
+function changeClearanceSold(productId, delta) {
+  const product = clearanceProducts.find(item => item.id === productId);
+  if (!product) return;
+
+  const nextSold = product.sold + delta;
+  if (nextSold < 0) return;
+
+  product.sold = nextSold;
+  saveData();
+  renderClearanceProducts();
+  renderStats();
+}
+
+function deleteClearanceProduct(productId) {
+  const product = clearanceProducts.find(item => item.id === productId);
+  if (!product) return;
+  if (!confirm(`Xác nhận xóa sản phẩm xả "${product.name}"?`)) return;
+
+  clearanceProducts = clearanceProducts.filter(item => item.id !== productId);
+  saveData();
+  renderClearanceProducts();
+  renderStats();
+}
+
 // ===== RESET =====
 function openResetModal() {
   if (models.length === 0 && variants.length === 0) {
@@ -406,6 +551,17 @@ document.getElementById('input-color-name').addEventListener('keydown', (e) => {
 
 document.getElementById('input-bulk-color').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') addBulkModels();
+});
+
+document.getElementById('input-clearance-image').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  document.getElementById('clearance-image-name').textContent = file
+    ? `Tên sản phẩm: ${file.name.replace(/\.[^/.]+$/, '')}`
+    : 'Tên sản phẩm sẽ tự lấy theo tên file ảnh.';
+});
+
+document.getElementById('input-clearance-quantity').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') addClearanceProduct();
 });
 
 // ===== IMAGE HELPERS =====
