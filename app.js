@@ -74,17 +74,19 @@ function renderStats() {
   const modelsLabel = document.getElementById('stat-models-label');
   const firstStat = document.getElementById('total-orders');
   const secondStat = document.getElementById('total-models');
+  const inventorySold = variants.reduce((sum, v) => sum + v.sold, 0);
+  const clearanceSold = clearanceProducts.reduce((sum, item) => sum + item.sold, 0);
+  const totalSold = inventorySold + clearanceSold;
 
   if (currentPage === 'clearance') {
-    ordersLabel.textContent = 'Mặt hàng';
-    modelsLabel.textContent = 'Đã bán';
-    firstStat.textContent = clearanceProducts.length.toLocaleString('vi-VN');
-    secondStat.textContent = clearanceProducts.reduce((sum, item) => sum + item.sold, 0).toLocaleString('vi-VN');
+    ordersLabel.textContent = 'Tổng đơn';
+    modelsLabel.textContent = 'SP xả';
+    firstStat.textContent = totalSold.toLocaleString('vi-VN');
+    secondStat.textContent = clearanceProducts.length;
     return;
   }
 
-  const totalSold = variants.reduce((sum, v) => sum + v.sold, 0);
-  ordersLabel.textContent = 'Đơn';
+  ordersLabel.textContent = 'Tổng đơn';
   modelsLabel.textContent = 'Mẫu';
   firstStat.textContent = totalSold.toLocaleString('vi-VN');
   secondStat.textContent = models.length;
