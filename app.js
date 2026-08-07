@@ -624,6 +624,7 @@ function updateModelImage(modelId, fileInput) {
     const model = models.find(m => m.id === modelId);
     if (model) {
       model.image = base64Img;
+      model.name = getFileBaseName(file);
       saveData();
       renderProducts();
     }
