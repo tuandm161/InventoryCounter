@@ -35,6 +35,13 @@ function loadData() {
         sold: Number.isInteger(item.sold) ? Math.max(0, item.sold) : 0
       }));
       nextClearanceId = data.nextClearanceId || 1;
+
+      // Các mẫu chưa có màu vẫn phải có một dòng mặc định để cộng số lượng.
+      models.forEach(model => {
+        if (!variants.some(variant => variant.modelId === model.id)) {
+          variants.push({ id: nextVariantId++, modelId: model.id, color: '0', stock: 0, sold: 0 });
+        }
+      });
     }
   } catch (e) {
     console.warn('Load data error:', e);
@@ -297,8 +304,9 @@ function addModel() {
   const colorEl = document.getElementById('input-model-color');
   const imageEl = document.getElementById('input-model-image');
 
-  const name = nameEl.value.trim();
-  const color = colorEl.value.trim();
+  const imageFile = imageEl.files[0];
+  const name = imageFile ? getFileBaseName(imageFile) : nameEl.value.trim();
+  const color = colorEl.value.trim() || '0';
 
   if (!name) { nameEl.focus(); return; }
 
@@ -310,10 +318,8 @@ function addModel() {
     const model = { id: nextModelId++, name, order: models.length, image: base64Img };
     models.push(model);
 
-    if (color) {
-      const variant = { id: nextVariantId++, modelId: model.id, color, stock: 0, sold: 0 };
-      variants.push(variant);
-    }
+    const variant = { id: nextVariantId++, modelId: model.id, color, stock: 0, sold: 0 };
+    variants.push(variant);
 
     saveData();
     renderAll();
@@ -340,7 +346,7 @@ function addBulkModels() {
   const prefix = prefixEl.value.trim().toUpperCase();
   const start = parseInt(startEl.value);
   const end = parseInt(endEl.value);
-  const color = colorEl.value.trim();
+  const color = colorEl.value.trim() || '0';
 
   if (!prefix) { prefixEl.focus(); return; }
   if (isNaN(start) || start < 1) { startEl.focus(); return; }
@@ -354,10 +360,8 @@ function addBulkModels() {
     const model = { id: nextModelId++, name, order: models.length, image: null };
     models.push(model);
 
-    if (color) {
-      const variant = { id: nextVariantId++, modelId: model.id, color, stock: 0, sold: 0 };
-      variants.push(variant);
-    }
+    const variant = { id: nextVariantId++, modelId: model.id, color, stock: 0, sold: 0 };
+    variants.push(variant);
   }
 
   if (btn) btn.disabled = false;
@@ -423,7 +427,7 @@ function addClearanceProduct() {
 
   compressImage(file, (base64Img) => {
     if (btn) btn.disabled = false;
-    const name = file.name.replace(/\.[^/.]+$/, '').trim() || 'Sản phẩm xả';
+    const name = getFileBaseName(file);
     clearanceProducts.push({ id: nextClearanceId++, name, image: base64Img, stock: quantity, sold: 0 });
     saveData();
     renderClearanceProducts();
@@ -547,6 +551,13 @@ document.getElementById('input-model-color').addEventListener('keydown', (e) => 
   if (e.key === 'Enter') addModel();
 });
 
+document.getElementById('input-model-image').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    document.getElementById('input-model-name').value = getFileBaseName(file);
+  }
+});
+
 document.getElementById('input-color-name').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') addColor();
 });
@@ -558,7 +569,7 @@ document.getElementById('input-bulk-color').addEventListener('keydown', (e) => {
 document.getElementById('input-clearance-image').addEventListener('change', (e) => {
   const file = e.target.files[0];
   document.getElementById('clearance-image-name').textContent = file
-    ? `Tên sản phẩm: ${file.name.replace(/\.[^/.]+$/, '')}`
+    ? `Tên sản phẩm: ${getFileBaseName(file)}`
     : 'Tên sản phẩm sẽ tự lấy theo tên file ảnh.';
 });
 
@@ -567,6 +578,10 @@ document.getElementById('input-clearance-quantity').addEventListener('keydown', 
 });
 
 // ===== IMAGE HELPERS =====
+function getFileBaseName(file) {
+  return file.name.replace(/\.[^/.]+$/, '').trim() || 'Sản phẩm';
+}
+
 function compressImage(file, callback) {
   if (!file) {
     return callback(null);
